@@ -1,0 +1,659 @@
+---
+title: "HIV 1 Nef promotes infection by excluding SERINC5
+from virion incorporation"
+author: "Aman"
+date: "15/03/2021"
+output: html_document
+---
+
+# Assigment 3 - Aman kumar - 17025
+
+Nef (Negative Regulatory Factor) is a small 27 35 kDa protein that is coded by the HIV genome.This gene performs several different tasks during infection. However, despite being studied for more than two decades, it was not known how this protein increases the infectivity of new virus particles released from the cell. In the year 2015, two groups of scientists independently solved this 20 year old mystery and shed light on a pair of new genes that could restrict HIV in absence of the Nef protein (Rosa et al. 2015; Usami et al. 2015).
+
+I have use this following paper to replicate results from the paper:
+
+Rosa A, Chande A, Ziglio S, De Sanctis V, Bertorelli R, Goh SL, McCauley SM, Nowosielska A, Antonarakis SE, Luban J, et al. 2015. HIV 1 Nef promotes infection by excluding SERINC5 from virion incorporation. Nature 526:212––217.217.
+
+They measured infectivity ratio of these same cell lines with Nef+ and Nef HIV. Using this data, they looked at correlations between expression levels of each gene with the infectivity ratio’s. Genes whose expression level showed a strong correlation with the infectivity ratio were chosen as candidate genes that were involved in restricting the virus in the absence of the Nef gene . Further experimental validation of these candidate genes lead to interesting new discovery that.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+getwd()
+#setwd("D:/IISER BHOPAL/SEM 8/DSE 401/Assignment 3")
+#getwd()
+```
+
+## Loading the libraries
+```{r}
+#install.packages("psych")
+```
+
+ 
+```{r Libraries, message=FALSE, warning=FALSE, paged.print=FALSE}
+
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(Hmisc)
+library(ggplot2)
+library(psych)
+library(factoextra)
+library(devtools)
+```
+
+# Reading files
+
+Loading Read-count files
+```{r}
+load_htseq <- list.files(pattern = "*.htseq")
+all_samples <- lapply(load_htseq, read.delim, header=F)
+all_samples <- as.data.frame(all_samples)
+colnames(all_samples)<- c("MT4","MT4_count","HSB2","HSB2_count","HT1080","HT1080_count","RAJI","RAJI_count","CEM SS","CEM SS_count","DAUDI","DAUDI_count","C8166","C8166_count","RAMOS","RAMOS_count","IMR90","IMR90_count","CEM_A_301","CEM_A_301_count","CEM_X_174","CEM_X_174_count","WI38","WI38_count","JURKAT_E6.1","JURKAT_E6.1_count","bl41","bl41_count","Jurkat_tag","Jurkat_tag_count")
+
+```
+
+
+### Extracting only count columns
+```{r}
+samples <- all_samples[c(1, seq(2, 30, 2))]
+colnames(samples)[1] <- c("Gene_ID")
+```
+
+### Loading Inactivity ratio file
+```{r}
+infect <- read.delim("infect.txt", sep="\t", header= F)
+colnames(infect) <- c("accession_id", "infectivity_ratio", "cell_lines")
+infect <- arrange(infect,accession_id)
+```
+
+## Data Visualization   
+```{r}
+MT4 = read.delim("SRR2166624.htseq", header=F)
+MT4 <- MT4[MT4$V2 != 0,]
+MT4 <- MT4[-c(58303, 58304, 58305, 58306, 58307),]
+```
+
+
+```{r}
+qplot(MT4$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for MT4 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,4000))
+```
+
+```{r}
+HSB2 = read.delim("SRR2166625.htseq", header=F)
+HSB2 <- HSB2[HSB2$V2 != 0,]
+```
+
+
+```{r}
+qplot(HSB2$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for HSB2 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,3300))
+```
+
+```{r}
+HT1080 = read.delim("SRR2166626.htseq", header=F)
+HT1080 <- HT1080[HT1080$V2 != 0,]
+```
+
+
+```{r}
+qplot(HT1080$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for HT1080 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,1700),
+      ylim=c(0,3000))
+```
+
+```{r}
+RAJI = read.delim("SRR2166627.htseq", header=F)
+RAJI <- RAJI[RAJI$V2 != 0,]
+```
+
+
+```{r}
+qplot(RAJI$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for RAJI cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2500),
+      ylim=c(0,3000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166628.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for CEM SS cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,3000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166629.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for DAUDI cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,1800),
+      ylim=c(0,2000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166630.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for C8166 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,1800),
+      ylim=c(0,2700))
+```
+
+```{r}
+cell_line = read.delim("SRR2166631.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for RAMOS cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,3000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166632.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for IMR90 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,3000),
+      ylim=c(0,5000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166633.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for CEM A 301 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,500),
+      ylim=c(0,500))
+```
+
+```{r}
+cell_line = read.delim("SRR2166634.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for CEM X 174 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,1000),
+      ylim=c(0,3500))
+```
+
+```{r}
+cell_line = read.delim("SRR2166635.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for WI38 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,3000),
+      ylim=c(0,5000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166636.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for JURKAT E6.1 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,3000),
+      ylim=c(0,4000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166637.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for bl41 cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,4000))
+```
+
+```{r}
+cell_line = read.delim("SRR2166638.htseq", header=F)
+cell_line <- cell_line[cell_line$V2 != 0,]
+```
+
+
+```{r}
+qplot(cell_line$V2,
+      geom="histogram",
+      binwidth = 50,  
+      main = "RPM distribution for Jurkat tag cell line", 
+      xlab = "RPM",  
+      fill=I("blue"), 
+      xlim=c(0,2000),
+      ylim=c(0,3000))
+```
+
+## Bar Plot
+
+```{r}
+ggplot(data = infect, aes(x= reorder(cell_lines, infectivity_ratio), y= infectivity_ratio))+geom_bar(stat = "identity", fill=c("orange", "orange", "orange", "orange", "orange", "orange", "orange", "orange", "green", "green", "green", "green", "green", "blue", "blue" ))+ coord_flip()
+```
+
+
+
+
+
+### Normalizing the datasets
+
+Here we are making function to convert reads into normal reads per million
+```{r}
+Normaliser <- function(x){
+  x/(sum(x)/1000000)
+}
+```
+
+Using the above function in our samples dataset
+```{r}
+samples[,2:16] <- lapply(samples[,2:16], Normaliser)
+```
+
+### Dividing data into 6 subsets for better computation
+```{r}
+sample_1 <- samples[1:10000,]
+sample_2 <- samples[10001:20000,]
+sample_3 <- samples[20001: 30000,]
+sample_4 <- samples[30001: 40000,]
+sample_5 <- samples [40001: 50000,]
+sample_6 <- samples [50001: 58307,]
+```
+
+### re-defing  data
+
+transposing the datasets 
+```{r}
+sample_t_1 <- as.data.frame(t(sample_1))
+names(sample_t_1) <- sample_t_1[1,]
+sample_t_1 <- sample_t_1[-1,]
+
+sample_t_2 <- as.data.frame(t(sample_2))
+names(sample_t_2) <- sample_t_2[1,]
+sample_t_2 <- sample_t_2[-1,]
+
+sample_t_3 <- as.data.frame(t(sample_3))
+names(sample_t_3) <- sample_t_3[1,]
+sample_t_3 <- sample_t_3[-1,]
+
+sample_t_4 <- as.data.frame(t(sample_4))
+names(sample_t_4) <- sample_t_4[1,]
+sample_t_4 <- sample_t_4[-1,]
+
+sample_t_5 <- as.data.frame(t(sample_5))
+names(sample_t_5) <- sample_t_5[1,]
+sample_t_5 <- sample_t_5[-1,]
+
+sample_t_6 <- as.data.frame(t(sample_6))
+names(sample_t_6) <- sample_t_6[1,]
+sample_t_6 <- sample_t_6[-1,]
+```
+
+
+
+```{r}
+sample_t_1_infect <- data.frame(infect$infectivity_ratio ,sample_t_1)
+sample_t_2_infect <- data.frame(infect$infectivity_ratio ,sample_t_2)
+sample_t_3_infect <- data.frame(infect$infectivity_ratio ,sample_t_3)
+sample_t_4_infect <- data.frame(infect$infectivity_ratio ,sample_t_4)
+sample_t_5_infect <- data.frame(infect$infectivity_ratio ,sample_t_5)
+sample_t_6_infect <- data.frame(infect$infectivity_ratio ,sample_t_6)
+```
+
+
+## creating data frame which will use in doing correlation test
+```{r}
+samples_t <- as.data.frame(t(samples))
+names(samples_t) <- samples_t[1,]
+samples_t <- samples_t[-1,]
+
+samples_infect <- data.frame(infect$infectivity_ratio ,samples_t)
+```
+
+
+## correlation test
+```{r,message=FALSE, warning=FALSE, paged.print=FALSE}
+i <- c()
+cor_e <- c()
+cor_p <- c()
+
+for (i in 2:58308)
+{
+  m = cor.test(samples_infect[,1],as.numeric(samples_infect[,i]),method = 'spearman', use = 'pairwise.complete.obs',p.adjust.methods = "fdr", exact = F)
+  cor_e[i-1] = m$estimate
+  cor_p[i-1] = m$p.value
+}
+
+cor_test <- data.frame(Gene = colnames(samples_infect[,2:58308]),
+                          cor_value = cor_e,
+                          p_value = cor_p
+                          )
+
+cor_test <- na.omit(cor_test)
+
+#cor_test
+```
+
+## subseting genes of interest 
+```{r}
+gene_of_interest <- na.omit(cor_test[cor_test$cor_value > 0.7 & cor_test$p_value < 0.01 ,])
+gene_of_interest
+```
+
+## correlation test
+```{r,message=FALSE, warning=FALSE, paged.print=FALSE}
+i <- c()
+cor_e <- c()
+cor_p <- c()
+
+for (i in 2:58308)
+{
+  m = cor.test(samples_infect[,1],as.numeric(samples_infect[,i]),method = 'pearson', use = 'pairwise.complete.obs',p.adjust.methods = "fdr", exact = F)
+  cor_e[i-1] = m$estimate
+  cor_p[i-1] = m$p.value
+}
+
+cor_test <- data.frame(Gene = colnames(samples_infect[,2:58308]),
+                          cor_value = cor_e,
+                          p_value = cor_p
+                          )
+
+#cor_test
+```
+
+## subseting genes of interest 
+```{r}
+gene_of_interest <- na.omit(cor_test[cor_test$cor_value > 0.9 & cor_test$p_value < 0.01 ,])
+gene_of_interest
+```
+
+## SERINC5   
+**To recreate the results from the paper, we need to look at the correlation value SERINC5**    
+Ensemble ID of **SERINC5** is ENSG00000164300 and from the table above, we can see that it has a correlation value of 0.91.  
+   
+Now we replicate he Figure 1-d from the paper...   
+```{r}
+Serinc5 <- samples_infect[, colnames(samples_infect) == c("infect.infectivity_ratio", "ENSG00000164300")]
+
+```
+
+
+```{r}
+ggplot(data = Serinc5, aes(infect.infectivity_ratio, as.numeric(ENSG00000164300), size= 1.0))+ 
+geom_point(pch=20)+   
+geom_smooth(method = "lm", se=F, col="green", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("SERINC5 count (RPM)")+ 
+ggtitle("SERINC5 Infectivity ratio")+
+geom_smooth(method = "lm", se=F, col="green", size=0.5)+
+theme_classic()+
+theme(legend.position = "none")
+```
+**We can also plot the infectivity ratio vs. RPM graph for all the SERNIC genes**   
+SERINC1 ENSG00000111897   
+SERINC2 ENSG00000168528   
+SERINC3 ENSG00000132824   
+SERINC4 ENSG00000184716   
+SERINC5 ENSG00000164300   
+
+```{r}
+ggplot(data = samples_infect, aes(infect.infectivity_ratio, as.numeric(ENSG00000111897), size= 1.0))+ 
+geom_point(pch=20, col="black")+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("SERINC1 count (RPM)")+ 
+ggtitle("SERINC1 Infectivity ratio")+
+theme(legend.position = "none")
+```
+
+```{r}
+ggplot(data = samples_infect, aes(infect.infectivity_ratio, as.numeric(ENSG00000168528), size= 1.0))+ 
+geom_point(pch=20, col="black")+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("SERINC2 count (RPM)")+ 
+ggtitle("SERINC2 Infectivity ratio")+
+theme(legend.position = "none")
+```
+
+```{r}
+ggplot(data = samples_infect, aes(infect.infectivity_ratio, as.numeric(ENSG00000132824), size= 1.0))+ 
+geom_point(pch=20, col="black")+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("SERINC3 count (RPM)")+ 
+ggtitle("SERINC3 Infectivity ratio")+
+theme(legend.position = "none")
+```
+
+```{r}
+ggplot(data = samples_infect, aes(infect.infectivity_ratio, as.numeric(ENSG00000184716), size= 1.0))+ 
+geom_point(pch=20, col="black")+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("SERINC4 count (RPM)")+ 
+ggtitle("SERINC4 Infectivity ratio")+
+theme(legend.position = "none")
+```
+## Next we find the genes with positive correlation as well as the genes with negative correlation
+
+```{r, error= T}
+poscor <- cor_test[cor_test$cor_value >= 0.9 & cor_test$p_value <= 0.01,] # For positively correlated genes
+posgenenames<- poscor$Gene
+posgenes <- samples_infect[, posgenenames]
+posgenes <- t(posgenes)
+negcor <- cor_test[cor_test$cor_value <= -0.6 & cor_test$p_value <= 0.05,] #For negatively correlated genes
+neggenenames<- negcor$Gene
+neggenes <- samples_infect[, neggenenames]
+neggenes <- t(neggenes)
+```
+
+```{r}
+head(poscor, n=11L)
+```
+
+```{r}
+head(negcor, n=12L)
+```
+# Our Hypothesis   
+The following genes might be able to block HIV as well...
+  **SAMHD1 (ENSG00000101347):** 
+  **APOBEC3G (ENSG00000239713):** 
+  **MX2 (ENSG00000183486):** 
+  **TRIM5 (ENSG00000132256):** 
+  **Tethering (ENSG00000130303):** Blocs HIV Budding   
+
+## Generating the data   
+```{r}
+SAMHD1 <- cor_test[cor_test$Gene=="ENSG00000101347",]
+SAMHD1$cor_value
+```
+```{r}
+APOBEC3G <- cor_test[cor_test$Gene=="ENSG00000239713",]
+APOBEC3G$cor_value
+```
+```{r}
+MX2 <- cor_test[cor_test$Gene=="ENSG00000183486",]
+MX2$cor_value
+```
+```{r}
+TRIM5 <- cor_test[cor_test$Gene=="ENSG00000132256",]
+TRIM5$cor_value
+```
+```{r}
+TETHERIN <- cor_test[cor_test$Gene=="ENSG00000130303",]
+TETHERIN$cor_value
+```
+
+We only find significant correlation with MX2 so we plot its graph...
+
+
+
+```{r}
+MX2 <- samples_infect[, colnames(samples_infect) == c("infect.infectivity_ratio", "ENSG00000183486")]
+```
+
+Now Plotting 
+```{r}
+ggplot(data = MX2, aes(infect.infectivity_ratio, as.numeric(ENSG00000183486), size= 1.0))+ 
+geom_point(pch=20)+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("Tetherin count (RPM)")+ 
+ggtitle("MX2 Infectivity ratio")+
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+theme(legend.position = "none")
+```
+
+
+## Upregulatd genes   
+
+```{r}
+head(poscor)
+```
+Among the above genes we find the following genes to be of most importance during HIV attack   
+
+ENSG00000158813	EDA   
+ENSG00000269802	AC011491.3   
+
+### EDA [ENSG00000158813]   
+
+**About EDA:** The protein encoded by this gene is a type II membrane protein that can be cleaved by furin to produce a secreted form.   
+**Hypothesis:** Upon infection with HIV, envelope proteins are attached to cell membrane so the fully packaged HIV with capcid can go and attached to cell membrane and leave the cell to infect new cell. So it might be upregulating this gene in order to increase it's infectivity.   
+
+```{r}
+EDA <- samples_infect[, colnames(samples_infect) == c("infect.infectivity_ratio", "ENSG00000158813")]
+```
+
+```{r}
+ggplot(data = EDA, aes(infect.infectivity_ratio, as.numeric(ENSG00000158813), size= 1.0))+ 
+geom_point(pch=20)+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("EDA count (RPM)")+ 
+ggtitle("EDA Infectivity ratio")+
+theme(legend.position = "none")
+```
+
+
+
+## Down regulated genes
+```{r}
+head(negcor)
+```
+
+Among above negatively correlated genes we found PLXNB2 Gene (ENSG00000196576) most interesting.
+
+```{r}
+PLXNB2 <- samples_infect[, colnames(samples_infect) == c("infect.infectivity_ratio", "ENSG00000196576")]
+```
+
+Now Plotting 
+```{r message=FALSE, warning=FALSE}
+ggplot(data = PLXNB2, aes(infect.infectivity_ratio, as.numeric(ENSG00000196576), size= 1.0))+ 
+geom_point(pch=20)+   
+geom_smooth(method = "lm", se=F, col="black", size=0.5)+
+xlab("Infectivity ratio")+
+ylab("PLXNB2 count (RPM)")+ 
+ggtitle("PLXNB2 Infectivity ratio")+
+theme(legend.position = "none")
+```
